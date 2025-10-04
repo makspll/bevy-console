@@ -12,7 +12,7 @@ pub(crate) struct ExitCommand;
 
 pub(crate) fn exit_command(
     mut exit: ConsoleCommand<ExitCommand>,
-    mut exit_writer: EventWriter<AppExit>,
+    mut exit_writer: MessageWriter<AppExit>,
 ) {
     if let Some(Ok(_)) = exit.take() {
         exit_writer.write(AppExit::Success);
