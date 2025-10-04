@@ -12,6 +12,6 @@ fn main() {
         .run();
 }
 
-fn write_to_console(mut console_line: EventWriter<PrintConsoleLine>) {
+fn write_to_console(mut console_line: MessageWriter<PrintConsoleLine>) {
     console_line.write(PrintConsoleLine::new("Hello".into()));
 }

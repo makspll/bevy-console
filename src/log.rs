@@ -6,7 +6,7 @@ use std::{
 use bevy::{
     app::{App, Update},
     log::tracing_subscriber::{self, EnvFilter, Layer, Registry},
-    prelude::{EventWriter, IntoScheduleConfigs, ResMut, Resource},
+    prelude::{MessageWriter, IntoScheduleConfigs, ResMut, Resource},
 };
 
 use crate::{ConsoleSet, PrintConsoleLine};
@@ -45,7 +45,7 @@ impl Write for BevyLogBufferWriter {
 /// Flushes the log buffer and sends its content to the console
 pub fn send_log_buffer_to_console(
     buffer: ResMut<BevyLogBuffer>,
-    mut console_lines: EventWriter<PrintConsoleLine>,
+    mut console_lines: MessageWriter<PrintConsoleLine>,
 ) {
     let mut buffer = buffer.0.lock().unwrap();
     // read and clean buffer

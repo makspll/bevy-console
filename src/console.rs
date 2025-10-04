@@ -27,9 +27,9 @@ use crate::{
     ConsoleSet,
 };
 
-type ConsoleCommandEnteredReaderSystemParam = EventReader<'static, 'static, ConsoleCommandEntered>;
+type ConsoleCommandEnteredReaderSystemParam = MessageReader<'static, 'static, ConsoleCommandEntered>;
 
-type PrintConsoleLineWriterSystemParam = EventWriter<'static, PrintConsoleLine>;
+type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
 /// A super-trait for command like structures
 pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource {}
@@ -69,7 +69,7 @@ pub trait NamedCommand {
 /// ```
 pub struct ConsoleCommand<'w, T> {
     command: Option<Result<T, clap::Error>>,
-    console_line: EventWriter<'w, PrintConsoleLine>,
+    console_line: MessageWriter<'w, PrintConsoleLine>,
 }
 
 impl<T> ConsoleCommand<'_, T> {
@@ -119,7 +119,7 @@ impl<T> ConsoleCommand<'_, T> {
 
 pub struct ConsoleCommandState<T> {
     #[allow(clippy::type_complexity)]
-    event_reader: <ConsoleCommandEnteredReaderSystemParam as SystemParam>::State,
+    message_reader: <ConsoleCommandEnteredReaderSystemParam as SystemParam>::State,
     console_line: <PrintConsoleLineWriterSystemParam as SystemParam>::State,
     marker: PhantomData<T>,
 }
@@ -128,14 +128,22 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     type State = ConsoleCommandState<T>;
     type Item<'w, 's> = ConsoleCommand<'w, T>;
 
-    fn init_state(world: &mut World, system_meta: &mut SystemMeta) -> Self::State {
-        let event_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world, system_meta);
-        let console_line = PrintConsoleLineWriterSystemParam::init_state(world, system_meta);
+    fn init_state(world: &mut World) -> Self::State {
+        let message_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world);
+        let console_line = PrintConsoleLineWriterSystemParam::init_state(world);
         ConsoleCommandState {
-            event_reader,
+            message_reader,
             console_line,
             marker: PhantomData,
         }
+    }
+    
+    fn init_access(
+            _state: &Self::State,
+            _system_meta: &mut SystemMeta,
+            _component_access_set: &mut bevy::ecs::query::FilteredAccessSet,
+            _world: &mut World,
+        ) {
     }
 
     #[inline]
@@ -145,8 +153,8 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         world: UnsafeWorldCell<'w>,
         change_tick: Tick,
     ) -> Self::Item<'w, 's> {
-        let mut event_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
-            &mut state.event_reader,
+        let mut message_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
+            &mut state.message_reader,
             system_meta,
             world,
             change_tick,
@@ -158,7 +166,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
             change_tick,
         );
 
-        let command = event_reader.read().find_map(|command| {
+        let command = message_reader.read().find_map(|command| {
             if T::name() == command.command_name {
                 let clap_command = T::command().no_binary_name(true);
                 // .color(clap::ColorChoice::Always);
@@ -189,7 +197,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     }
 }
 /// Parsed raw console command into `command` and `args`.
-#[derive(Clone, Debug, Event)]
+#[derive(Clone, Debug, Message)]
 pub struct ConsoleCommandEntered {
     /// the command definition
     pub command_name: String,
@@ -197,8 +205,8 @@ pub struct ConsoleCommandEntered {
     pub args: Vec<String>,
 }
 
-/// Events to print to the console.
-#[derive(Clone, Debug, Eq, Event, PartialEq)]
+/// Messages to print to the console.
+#[derive(Clone, Debug, Eq, Message, PartialEq)]
 pub struct PrintConsoleLine {
     /// Console line
     pub line: String,
@@ -488,15 +496,15 @@ pub(crate) fn console_ui(
     mut egui_context: EguiContexts,
     config: Res<ConsoleConfiguration>,
     mut cache: ResMut<ConsoleCache>,
-    mut keyboard_input_events: EventReader<KeyboardInput>,
+    mut keyboard_input_events: MessageReader<KeyboardInput>,
     mut state: ResMut<ConsoleState>,
-    command_entered: EventWriter<ConsoleCommandEntered>,
+    command_entered: MessageWriter<ConsoleCommandEntered>,
     mut console_open: ResMut<ConsoleOpen>,
 ) {
     let keyboard_input_events = keyboard_input_events.read().collect::<Vec<_>>();
 
     // If there is no egui context, return, this can happen when exiting the app
-    let ctx = if let Some(ctxt) = egui_context.try_ctx_mut() {
+    let ctx = if let Ok(ctxt) = egui_context.ctx_mut() {
         ctxt
     } else {
         return;
@@ -669,7 +677,7 @@ fn handle_enter(
     config: Res<'_, ConsoleConfiguration>,
     cache: &ResMut<'_, ConsoleCache>,
     state: &mut ResMut<'_, ConsoleState>,
-    mut command_entered: EventWriter<'_, ConsoleCommandEntered>,
+    mut command_entered: MessageWriter<'_, ConsoleCommandEntered>,
     ui: &mut egui::Ui,
     text_edit_response: &egui::Response,
 ) {
@@ -725,11 +733,11 @@ fn handle_enter(
 
 pub(crate) fn receive_console_line(
     mut console_state: ResMut<ConsoleState>,
-    mut events: EventReader<PrintConsoleLine>,
+    mut messages: MessageReader<PrintConsoleLine>,
 ) {
-    for event in events.read() {
-        let event: &PrintConsoleLine = event;
-        console_state.scrollback.push(event.line.clone());
+    for message in messages.read() {
+        let message: &PrintConsoleLine = message;
+        console_state.scrollback.push(message.line.clone());
     }
 }
 
@@ -765,7 +773,7 @@ pub fn block_mouse_input(
         return;
     }
 
-    let Some(context) = contexts.try_ctx_mut() else {
+    let Ok(context) = contexts.ctx_mut() else {
         return;
     };
 
@@ -783,7 +791,7 @@ pub fn block_keyboard_input(
         return;
     }
 
-    let Some(context) = contexts.try_ctx_mut() else {
+    let Ok(context) = contexts.ctx_mut() else {
         return;
     };
 

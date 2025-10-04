@@ -8,7 +8,7 @@ fn main() {
         .run();
 }
 
-fn raw_commands(mut console_commands: EventReader<ConsoleCommandEntered>) {
+fn raw_commands(mut console_commands: MessageReader<ConsoleCommandEntered>) {
     for ConsoleCommandEntered { command_name, args } in console_commands.read() {
         println!(r#"Entered command "{command_name}" with args {:#?}"#, args);
     }
