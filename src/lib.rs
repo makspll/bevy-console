@@ -3,7 +3,7 @@
 
 use bevy::prelude::*;
 pub use bevy_console_derive::ConsoleCommand;
-use bevy_egui::{EguiContextPass, EguiPlugin, EguiPreUpdateSet};
+use bevy_egui::{EguiPlugin, EguiPreUpdateSet, EguiPrimaryContextPass};
 use console::{block_keyboard_input, block_mouse_input, ConsoleCache};
 use trie_rs::TrieBuilder;
 
@@ -86,14 +86,14 @@ impl Plugin for ConsolePlugin {
                     .before(EguiPreUpdateSet::BeginPass),
             )
             .add_systems(
-                EguiContextPass,
+                EguiPrimaryContextPass,
                 (
                     console_ui.in_set(ConsoleSet::ConsoleUI),
                     receive_console_line.in_set(ConsoleSet::PostCommands),
                 ),
             )
             .configure_sets(
-                EguiContextPass,
+                EguiPrimaryContextPass,
                 (
                     ConsoleSet::Commands
                         .after(ConsoleSet::ConsoleUI)
@@ -105,9 +105,7 @@ impl Plugin for ConsolePlugin {
         // Don't initialize an egui plugin if one already exists.
         // This can happen if another plugin is using egui and was installed before us.
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugins(EguiPlugin {
-                enable_multipass_for_primary_context: true,
-            });
+            app.add_plugins(EguiPlugin::default());
         }
     }
 }

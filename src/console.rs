@@ -496,7 +496,7 @@ pub(crate) fn console_ui(
     let keyboard_input_events = keyboard_input_events.read().collect::<Vec<_>>();
 
     // If there is no egui context, return, this can happen when exiting the app
-    let ctx = if let Some(ctxt) = egui_context.try_ctx_mut() {
+    let ctx = if let Ok(ctxt) = egui_context.ctx_mut() {
         ctxt
     } else {
         return;
@@ -765,7 +765,7 @@ pub fn block_mouse_input(
         return;
     }
 
-    let Some(context) = contexts.try_ctx_mut() else {
+    let Ok(context) = contexts.ctx_mut() else {
         return;
     };
 
@@ -783,7 +783,7 @@ pub fn block_keyboard_input(
         return;
     }
 
-    let Some(context) = contexts.try_ctx_mut() else {
+    let Ok(context) = contexts.ctx_mut() else {
         return;
     };
 
