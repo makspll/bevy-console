@@ -514,10 +514,13 @@ pub(crate) fn console_ui(
         .iter()
         .any(|code| console_key_pressed(code, &config.keys));
 
+    
+    let mut open_status_changed = false;
     // always close if console open
     // avoid opening console if typing in another text input
     if pressed && (console_open.open || !ctx.wants_keyboard_input()) {
         console_open.open = !console_open.open;
+        open_status_changed = true;
     }
 
     if console_open.open {
@@ -666,8 +669,10 @@ pub(crate) fn console_ui(
                         }
                     }
 
-                    // Focus on input
-                    ui.memory_mut(|m| m.request_focus(text_edit_response.id));
+                    // Focus on input, when console just opened
+                    if open_status_changed {
+                        ui.memory_mut(|m| m.request_focus(text_edit_response.id));
+                    }
                 });
             });
     }
