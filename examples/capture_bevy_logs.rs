@@ -13,6 +13,7 @@ fn main() {
             }),
             ConsolePlugin,
         ))
+        .add_systems(Startup, setup_camera_system)
         .add_systems(Startup, || {
             log::info!("Hi!");
             log::warn!("This is a warning!");
@@ -21,4 +22,8 @@ fn main() {
             log::info!("Bye!");
         })
         .run();
+}
+
+fn setup_camera_system(mut commands: Commands) {
+    commands.spawn(Camera2d);
 }

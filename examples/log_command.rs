@@ -6,8 +6,13 @@ fn main() {
     App::new()
         // set background to red
         .add_plugins((DefaultPlugins, ConsolePlugin))
+        .add_systems(Startup, setup_camera_system)
         .add_console_command::<LogCommand, _>(log_command)
         .run();
+}
+
+fn setup_camera_system(mut commands: Commands) {
+    commands.spawn(Camera2d);
 }
 
 /// Prints given arguments to the console

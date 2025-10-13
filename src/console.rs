@@ -1,3 +1,4 @@
+use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     component::Tick,
@@ -73,6 +74,7 @@ pub struct ConsoleCommand<'w, T> {
 }
 
 impl<T> ConsoleCommand<'_, T> {
+    ///
     /// Returns Some(T) if the command was executed and arguments were valid.
     ///
     /// This method should only be called once.
@@ -146,6 +148,14 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         ) {
     }
 
+    fn init_access(
+        state: &Self::State,
+        system_meta: &mut SystemMeta,
+        component_access_set: &mut FilteredAccessSet,
+        world: &mut World,
+    ) {
+    }
+
     #[inline]
     unsafe fn get_param<'w, 's>(
         state: &'s mut Self::State,
@@ -197,7 +207,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     }
 }
 /// Parsed raw console command into `command` and `args`.
-#[derive(Clone, Debug, Message)]
+#[derive(Clone, Debug, Event, Message)]
 pub struct ConsoleCommandEntered {
     /// the command definition
     pub command_name: String,
@@ -205,8 +215,8 @@ pub struct ConsoleCommandEntered {
     pub args: Vec<String>,
 }
 
-/// Messages to print to the console.
-#[derive(Clone, Debug, Eq, Message, PartialEq)]
+/// Events to print to the console.
+#[derive(Clone, Debug, Eq, Event, PartialEq, Message)]
 pub struct PrintConsoleLine {
     /// Console line
     pub line: String,
@@ -248,7 +258,7 @@ pub struct ConsoleConfiguration {
     pub moveable: bool,
     /// show the title bar or not
     pub show_title_bar: bool,
-    /// Background color of console window  
+    /// Background color of console window
     pub background_color: Color32,
     /// Foreground (text) color
     pub foreground_color: Color32,

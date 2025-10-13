@@ -5,6 +5,7 @@ use bevy_console::{ConsoleConfiguration, ConsolePlugin};
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, ConsolePlugin))
+        .add_systems(Startup, setup_camera_system)
         .insert_resource(ConsoleConfiguration {
             keys: vec![
                 // Console key on a swedish keyboard
@@ -20,4 +21,8 @@ fn main() {
             ..Default::default()
         })
         .run();
+}
+
+fn setup_camera_system(mut commands: Commands) {
+    commands.spawn(Camera2d);
 }
