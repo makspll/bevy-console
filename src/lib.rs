@@ -48,12 +48,13 @@ pub enum ConsoleSet {
 }
 
 /// Run condition which does not run any command systems if no command was entered
-fn have_commands(commands: EventReader<ConsoleCommandEntered>) -> bool {
+fn have_commands(commands: MessageReader<ConsoleCommandEntered>) -> bool {
     !commands.is_empty()
 }
 
 /// builds the predictive search engine for completions
 fn init(config: Res<ConsoleConfiguration>, mut cache: ResMut<ConsoleCache>) {
+    println!("lib.rs:init");
     let mut trie_builder = TrieBuilder::new();
     for cmd in config.commands.keys() {
         trie_builder.push(cmd);
@@ -72,8 +73,8 @@ impl Plugin for ConsolePlugin {
             .init_resource::<ConsoleState>()
             .init_resource::<ConsoleOpen>()
             .init_resource::<ConsoleCache>()
-            .add_event::<ConsoleCommandEntered>()
-            .add_event::<PrintConsoleLine>()
+            .add_message::<ConsoleCommandEntered>()
+            .add_message::<PrintConsoleLine>()
             .add_console_command::<ClearCommand, _>(clear_command)
             .add_console_command::<ExitCommand, _>(exit_command)
             .add_console_command::<HelpCommand, _>(help_command)

@@ -1,3 +1,4 @@
+use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     component::Tick,
@@ -27,9 +28,9 @@ use crate::{
     ConsoleSet,
 };
 
-type ConsoleCommandEnteredReaderSystemParam = EventReader<'static, 'static, ConsoleCommandEntered>;
+type ConsoleCommandEnteredReaderSystemParam = MessageReader<'static, 'static, ConsoleCommandEntered>;
 
-type PrintConsoleLineWriterSystemParam = EventWriter<'static, PrintConsoleLine>;
+type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
 /// A super-trait for command like structures
 pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource {}
@@ -69,10 +70,11 @@ pub trait NamedCommand {
 /// ```
 pub struct ConsoleCommand<'w, T> {
     command: Option<Result<T, clap::Error>>,
-    console_line: EventWriter<'w, PrintConsoleLine>,
+    console_line: MessageWriter<'w, PrintConsoleLine>,
 }
 
 impl<T> ConsoleCommand<'_, T> {
+    ///
     /// Returns Some(T) if the command was executed and arguments were valid.
     ///
     /// This method should only be called once.
@@ -128,14 +130,22 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     type State = ConsoleCommandState<T>;
     type Item<'w, 's> = ConsoleCommand<'w, T>;
 
-    fn init_state(world: &mut World, system_meta: &mut SystemMeta) -> Self::State {
-        let event_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world, system_meta);
-        let console_line = PrintConsoleLineWriterSystemParam::init_state(world, system_meta);
+    fn init_state(world: &mut World) -> Self::State {
+        let event_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world);
+        let console_line = PrintConsoleLineWriterSystemParam::init_state(world);
         ConsoleCommandState {
             event_reader,
             console_line,
             marker: PhantomData,
         }
+    }
+
+    fn init_access(
+        state: &Self::State,
+        system_meta: &mut SystemMeta,
+        component_access_set: &mut FilteredAccessSet,
+        world: &mut World,
+    ) {
     }
 
     #[inline]
@@ -189,7 +199,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     }
 }
 /// Parsed raw console command into `command` and `args`.
-#[derive(Clone, Debug, Event)]
+#[derive(Clone, Debug, Event, Message)]
 pub struct ConsoleCommandEntered {
     /// the command definition
     pub command_name: String,
@@ -198,7 +208,7 @@ pub struct ConsoleCommandEntered {
 }
 
 /// Events to print to the console.
-#[derive(Clone, Debug, Eq, Event, PartialEq)]
+#[derive(Clone, Debug, Eq, Event, PartialEq, Message)]
 pub struct PrintConsoleLine {
     /// Console line
     pub line: String,
@@ -240,7 +250,7 @@ pub struct ConsoleConfiguration {
     pub moveable: bool,
     /// show the title bar or not
     pub show_title_bar: bool,
-    /// Background color of console window  
+    /// Background color of console window
     pub background_color: Color32,
     /// Foreground (text) color
     pub foreground_color: Color32,
@@ -488,9 +498,9 @@ pub(crate) fn console_ui(
     mut egui_context: EguiContexts,
     config: Res<ConsoleConfiguration>,
     mut cache: ResMut<ConsoleCache>,
-    mut keyboard_input_events: EventReader<KeyboardInput>,
+    mut keyboard_input_events: MessageReader<KeyboardInput>,
     mut state: ResMut<ConsoleState>,
-    command_entered: EventWriter<ConsoleCommandEntered>,
+    command_entered: MessageWriter<ConsoleCommandEntered>,
     mut console_open: ResMut<ConsoleOpen>,
 ) {
     let keyboard_input_events = keyboard_input_events.read().collect::<Vec<_>>();
@@ -674,7 +684,7 @@ fn handle_enter(
     config: Res<'_, ConsoleConfiguration>,
     cache: &ResMut<'_, ConsoleCache>,
     state: &mut ResMut<'_, ConsoleState>,
-    mut command_entered: EventWriter<'_, ConsoleCommandEntered>,
+    mut command_entered: MessageWriter<'_, ConsoleCommandEntered>,
     ui: &mut egui::Ui,
     text_edit_response: &egui::Response,
 ) {
@@ -730,7 +740,7 @@ fn handle_enter(
 
 pub(crate) fn receive_console_line(
     mut console_state: ResMut<ConsoleState>,
-    mut events: EventReader<PrintConsoleLine>,
+    mut events: MessageReader<PrintConsoleLine>,
 ) {
     for event in events.read() {
         let event: &PrintConsoleLine = event;
