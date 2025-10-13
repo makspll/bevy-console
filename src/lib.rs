@@ -42,7 +42,7 @@ pub enum ConsoleSet {
     Commands,
 
     /// Systems running after command systems, which depend on the fact commands have executed beforehand (the output layer).
-    /// For example a system which makes use of [`PrintConsoleLine`] events should be placed in this set to be able to receive
+    /// For example a system which makes use of [`PrintConsoleLine`] messages should be placed in this set to be able to receive
     /// New lines to print in the same frame
     PostCommands,
 }

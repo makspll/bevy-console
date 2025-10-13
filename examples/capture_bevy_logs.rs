@@ -9,7 +9,7 @@ fn main() {
                 level: log::Level::INFO,
                 filter: "error,capture_bevy_logs=info".to_owned(),
                 custom_layer: make_layer,
-                fmt_layer: |_| None,
+                ..default()
             }),
             ConsolePlugin,
         ))

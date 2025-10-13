@@ -121,7 +121,7 @@ impl<T> ConsoleCommand<'_, T> {
 
 pub struct ConsoleCommandState<T> {
     #[allow(clippy::type_complexity)]
-    event_reader: <ConsoleCommandEnteredReaderSystemParam as SystemParam>::State,
+    message_reader: <ConsoleCommandEnteredReaderSystemParam as SystemParam>::State,
     console_line: <PrintConsoleLineWriterSystemParam as SystemParam>::State,
     marker: PhantomData<T>,
 }
@@ -131,13 +131,21 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     type Item<'w, 's> = ConsoleCommand<'w, T>;
 
     fn init_state(world: &mut World) -> Self::State {
-        let event_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world);
+        let message_reader = ConsoleCommandEnteredReaderSystemParam::init_state(world);
         let console_line = PrintConsoleLineWriterSystemParam::init_state(world);
         ConsoleCommandState {
-            event_reader,
+            message_reader,
             console_line,
             marker: PhantomData,
         }
+    }
+    
+    fn init_access(
+            _state: &Self::State,
+            _system_meta: &mut SystemMeta,
+            _component_access_set: &mut bevy::ecs::query::FilteredAccessSet,
+            _world: &mut World,
+        ) {
     }
 
     fn init_access(
@@ -155,8 +163,8 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         world: UnsafeWorldCell<'w>,
         change_tick: Tick,
     ) -> Self::Item<'w, 's> {
-        let mut event_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
-            &mut state.event_reader,
+        let mut message_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
+            &mut state.message_reader,
             system_meta,
             world,
             change_tick,
@@ -168,7 +176,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
             change_tick,
         );
 
-        let command = event_reader.read().find_map(|command| {
+        let command = message_reader.read().find_map(|command| {
             if T::name() == command.command_name {
                 let clap_command = T::command().no_binary_name(true);
                 // .color(clap::ColorChoice::Always);
@@ -740,11 +748,11 @@ fn handle_enter(
 
 pub(crate) fn receive_console_line(
     mut console_state: ResMut<ConsoleState>,
-    mut events: MessageReader<PrintConsoleLine>,
+    mut messages: MessageReader<PrintConsoleLine>,
 ) {
-    for event in events.read() {
-        let event: &PrintConsoleLine = event;
-        console_state.scrollback.push(event.line.clone());
+    for message in messages.read() {
+        let message: &PrintConsoleLine = message;
+        console_state.scrollback.push(message.line.clone());
     }
 }
 
