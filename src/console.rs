@@ -148,14 +148,6 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         ) {
     }
 
-    fn init_access(
-        state: &Self::State,
-        system_meta: &mut SystemMeta,
-        component_access_set: &mut FilteredAccessSet,
-        world: &mut World,
-    ) {
-    }
-
     #[inline]
     unsafe fn get_param<'w, 's>(
         state: &'s mut Self::State,
