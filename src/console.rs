@@ -28,7 +28,8 @@ use crate::{
     ConsoleSet,
 };
 
-type ConsoleCommandEnteredReaderSystemParam = MessageReader<'static, 'static, ConsoleCommandEntered>;
+type ConsoleCommandEnteredReaderSystemParam =
+    MessageReader<'static, 'static, ConsoleCommandEntered>;
 
 type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
@@ -139,13 +140,13 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
             marker: PhantomData,
         }
     }
-    
+
     fn init_access(
-            _state: &Self::State,
-            _system_meta: &mut SystemMeta,
-            _component_access_set: &mut FilteredAccessSet,
-            _world: &mut World,
-        ) {
+        _state: &Self::State,
+        _system_meta: &mut SystemMeta,
+        _component_access_set: &mut FilteredAccessSet,
+        _world: &mut World,
+    ) {
     }
 
     #[inline]
@@ -516,7 +517,6 @@ pub(crate) fn console_ui(
         .iter()
         .any(|code| console_key_pressed(code, &config.keys));
 
-    
     let mut open_status_changed = false;
     // always close if console open
     // avoid opening console if typing in another text input
