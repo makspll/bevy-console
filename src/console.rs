@@ -143,7 +143,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     fn init_access(
             _state: &Self::State,
             _system_meta: &mut SystemMeta,
-            _component_access_set: &mut bevy::ecs::query::FilteredAccessSet,
+            _component_access_set: &mut FilteredAccessSet,
             _world: &mut World,
         ) {
     }
