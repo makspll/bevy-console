@@ -21,6 +21,7 @@ pub use clap;
 
 // mod color;
 mod color;
+#[cfg(feature = "default-commands")]
 mod commands;
 mod console;
 mod log;
@@ -74,12 +75,15 @@ impl Plugin for ConsolePlugin {
             .init_resource::<ConsoleOpen>()
             .init_resource::<ConsoleCache>()
             .add_message::<ConsoleCommandEntered>()
-            .add_message::<PrintConsoleLine>()
-            .add_console_command::<ClearCommand, _>(clear_command)
+            .add_message::<PrintConsoleLine>();
+
+        #[cfg(feature = "default-commands")]
+        app.add_console_command::<ClearCommand, _>(clear_command)
             .add_console_command::<ExitCommand, _>(exit_command)
-            .add_console_command::<HelpCommand, _>(help_command)
-            // after per-command startup
-            .add_systems(Startup, init.after(ConsoleSet::Startup))
+            .add_console_command::<HelpCommand, _>(help_command);
+
+        // after per-command startup
+        app.add_systems(Startup, init.after(ConsoleSet::Startup))
             .add_systems(
                 PreUpdate,
                 (block_mouse_input, block_keyboard_input)
