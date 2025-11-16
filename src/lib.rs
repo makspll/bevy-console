@@ -19,7 +19,6 @@ pub use crate::log::*;
 use crate::console::{console_ui, receive_console_line, ConsoleState};
 pub use clap;
 
-// mod color;
 mod color;
 mod commands;
 mod console;
