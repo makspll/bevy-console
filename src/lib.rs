@@ -53,7 +53,7 @@ fn have_commands(commands: MessageReader<ConsoleCommandEntered>) -> bool {
 
 /// builds the predictive search engine for completions
 fn init(config: Res<ConsoleConfiguration>, mut cache: ResMut<ConsoleCache>) {
-    println!("lib.rs:init");
+    debug!("lib.rs:init");
     let mut trie_builder = TrieBuilder::new();
     for cmd in config.commands.keys() {
         trie_builder.push(cmd);
