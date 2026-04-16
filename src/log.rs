@@ -95,21 +95,21 @@ fn setup_layer(
         send_log_buffer_to_console.in_set(ConsoleSet::PostCommands),
     );
 
-    let layer: Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync> = match filter {
-        Some(filter) => Box::new(
-            tracing_subscriber::fmt::Layer::new()
-                .with_target(false)
-                .with_ansi(true)
-                .with_writer(move || BevyLogBufferWriter(buffer.clone()))
-                .with_filter(filter),
-        ),
-        None => Box::new(
-            tracing_subscriber::fmt::Layer::new()
-                .with_target(false)
-                .with_ansi(true)
-                .with_writer(move || BevyLogBufferWriter(buffer.clone())),
-        ),
-    };
+    let layer = tracing_subscriber::fmt::Layer::new()
+        .with_target(false)
+        .with_ansi(true)
+        .with_writer(move || BevyLogBufferWriter(buffer.clone()));
+
+    // Time doesn't work on wasm, quick fix
+    #[cfg(target_arch = "wasm32")]
+    let layer = layer.without_time();
+
+    let layer: Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync> =
+        if let Some(filter) = filter {
+            Box::new(layer.with_filter(filter))
+        } else {
+            Box::new(layer)
+        };
 
     Some(layer)
 }
