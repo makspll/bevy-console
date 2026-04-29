@@ -104,12 +104,9 @@ fn setup_layer(
     #[cfg(target_arch = "wasm32")]
     let layer = layer.without_time();
 
-    let layer: Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync> =
-        if let Some(filter) = filter {
-            Box::new(layer.with_filter(filter))
-        } else {
-            Box::new(layer)
-        };
-
-    Some(layer)
+    Some(if let Some(filter) = filter {
+        Box::new(layer.with_filter(filter))
+    } else {
+        Box::new(layer)
+    })
 }
