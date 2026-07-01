@@ -2,7 +2,7 @@ use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     change_detection::Tick,
-    system::{ScheduleSystem, SystemMeta, SystemParam},
+    system::{ScheduleSystem, SystemMeta, SystemParam, SystemParamValidationError},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 use bevy::platform::hash::FixedState;
@@ -34,8 +34,8 @@ type ConsoleCommandEnteredReaderSystemParam =
 type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
 /// A super-trait for command like structures
-pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource {}
-impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource> Command for T {}
+pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static {}
+impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static> Command for T {}
 
 /// Trait used to allow uniquely identifying commands at compile time
 pub trait NamedCommand {
@@ -155,20 +155,20 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         system_meta: &SystemMeta,
         world: UnsafeWorldCell<'w>,
         change_tick: Tick,
-    ) -> Self::Item<'w, 's> {
+    ) -> Result<Self::Item<'w, 's>, SystemParamValidationError> {
         unsafe {
             let mut message_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
                 &mut state.message_reader,
                 system_meta,
                 world,
                 change_tick,
-            );
+            )?;
             let mut console_line = PrintConsoleLineWriterSystemParam::get_param(
                 &mut state.console_line,
                 system_meta,
                 world,
                 change_tick,
-            );
+            )?;
 
             let command = message_reader.read().find_map(|command| {
                 if T::name() == command.command_name {
@@ -194,10 +194,10 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
                 None
             });
 
-            ConsoleCommand {
+            Ok(ConsoleCommand {
                 command,
                 console_line,
-            }
+            })
         }
     }
 }
@@ -522,7 +522,7 @@ pub(crate) fn console_ui(
     let mut open_status_changed = false;
 
     // Toggle console
-    if pressed && (console_open.open || !ctx.wants_keyboard_input()) {
+    if pressed && (console_open.open || !ctx.egui_wants_keyboard_input()) {
         console_open.open = !console_open.open;
         open_status_changed = true;
     }
@@ -552,9 +552,9 @@ pub(crate) fn console_ui(
             // ------------------------
             // Bottom panel: input area
             // ------------------------
-            egui::TopBottomPanel::bottom("console_input_panel")
-                .exact_height(36.0)
-                .show_inside(ui, |ui| {
+            egui::Panel::bottom("console_input_panel")
+                .exact_size(36.0)
+                .show(ui, |ui| {
                     ui.separator();
 
                     // Ctrl+C clears input
@@ -664,7 +664,7 @@ pub(crate) fn console_ui(
             // ------------------------
             // Central panel: scrollback
             // ------------------------
-            egui::CentralPanel::default().show_inside(ui, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .stick_to_bottom(true)
@@ -787,7 +787,7 @@ pub fn block_mouse_input(
         return;
     };
 
-    if context.is_pointer_over_area() || context.wants_pointer_input() {
+    if context.is_pointer_over_egui() || context.egui_wants_pointer_input() {
         mouse.reset_all();
     }
 }
@@ -805,7 +805,7 @@ pub fn block_keyboard_input(
         return;
     };
 
-    if context.wants_keyboard_input() {
+    if context.egui_wants_keyboard_input() {
         keyboard_keycode.reset_all();
     }
 }
