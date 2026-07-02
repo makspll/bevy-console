@@ -34,8 +34,14 @@ type ConsoleCommandEnteredReaderSystemParam =
 type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
 /// A super-trait for command like structures
-pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static {}
-impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static> Command for T {}
+pub trait Command:
+    NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static
+{
+}
+impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static> Command
+    for T
+{
+}
 
 /// Trait used to allow uniquely identifying commands at compile time
 pub trait NamedCommand {
