@@ -18,7 +18,7 @@ bevy = { version = "0.19", default-features = false, features = [
 ] }
 clap = { version = "4.5", features = ["derive"] }
 bevy_console_derive = { path = "./bevy_console_derive", version = "0.6.0" }
-bevy_egui = { version = "0.41", default-features = false, features = [
+bevy_egui = { version = "0.42", default-features = false, features = [
   "render",
   "default_fonts",
 ] }
