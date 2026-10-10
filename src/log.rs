@@ -13,10 +13,10 @@ use crate::{ConsoleSet, PrintConsoleLine};
 
 /// Buffers logs written by bevy at runtime
 #[derive(Resource)]
-pub struct BevyLogBuffer(Arc<Mutex<std::io::Cursor<Vec<u8>>>>);
+pub struct BevyLogBuffer(Arc<Mutex<Vec<u8>>>);
 
 /// Writer implementation which writes into a buffer resource inside the bevy world
-pub struct BevyLogBufferWriter(Arc<Mutex<std::io::Cursor<Vec<u8>>>>);
+pub struct BevyLogBufferWriter(Arc<Mutex<Vec<u8>>>);
 
 impl Write for BevyLogBufferWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
@@ -45,7 +45,6 @@ pub fn send_log_buffer_to_console(
 ) {
     let mut buffer = buffer.0.lock().unwrap();
     // read and clean buffer
-    let buffer = buffer.get_mut();
     for line in buffer.lines().map_while(Result::ok) {
         console_lines.write(PrintConsoleLine { line });
     }
@@ -88,7 +87,7 @@ fn setup_layer(
     app: &mut App,
     filter: Option<EnvFilter>,
 ) -> Option<Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync>> {
-    let buffer = Arc::new(Mutex::new(std::io::Cursor::new(Vec::new())));
+    let buffer = Arc::new(Mutex::new(Vec::new()));
     app.insert_resource(BevyLogBuffer(buffer.clone()));
     app.add_systems(
         Update,
