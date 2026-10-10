@@ -698,6 +698,8 @@ fn handle_enter(
 ) {
     // Handle enter
     if text_edit_response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+        ui.memory_mut(|m| m.request_focus(text_edit_response.id));
+
         // if we have a selected suggestion
         // replace the content of the buffer with it and set the cursor to the end
         if let Some(index) = state.suggestion_index
