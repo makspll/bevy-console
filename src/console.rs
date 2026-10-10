@@ -1,4 +1,4 @@
-use bevy::ecs::query::FilteredAccessSet;
+use bevy::ecs::system::SystemAccess;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     change_detection::Tick,
@@ -150,7 +150,7 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
     fn init_access(
         _state: &Self::State,
         _system_meta: &mut SystemMeta,
-        _component_access_set: &mut FilteredAccessSet,
+        _component_access_set: &mut SystemAccess,
         _world: &mut World,
     ) {
     }
