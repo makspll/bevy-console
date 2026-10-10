@@ -272,6 +272,8 @@ pub struct ConsoleConfiguration {
     /// Custom completion sequences,
     /// for example [vec!["custom", "foo"]], will complete `custom foo` when typing `custom`
     pub arg_completions: Vec<Vec<String>>,
+    /// Validate entered commands to only allow registered commands
+    pub validate_commands: bool,
 }
 
 #[derive(Resource, Default)]
@@ -306,6 +308,7 @@ impl Default for ConsoleConfiguration {
             block_mouse: false,
             block_keyboard: false,
             arg_completions: Default::default(),
+            validate_commands: true,
         }
     }
 }
@@ -332,6 +335,7 @@ impl Clone for ConsoleConfiguration {
             num_suggestions: 4,
             block_mouse: self.block_mouse,
             block_keyboard: self.block_keyboard,
+            validate_commands: self.validate_commands,
         }
     }
 }
@@ -728,9 +732,9 @@ fn handle_enter(
                 let command_name = args.remove(0);
                 debug!("Command entered: `{command_name}`, with args: `{args:?}`");
 
-                let command = config.commands.get(command_name.as_str());
+                let command_found = config.commands.contains_key(command_name.as_str());
 
-                if command.is_some() {
+                if command_found || !config.validate_commands {
                     command_entered.write(ConsoleCommandEntered { command_name, args });
                 } else {
                     debug!(
